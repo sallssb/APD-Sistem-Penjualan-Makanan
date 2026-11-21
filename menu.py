@@ -1,219 +1,220 @@
-# ==========================================
-# CRUD MENU
-# ==========================================
-
 from prettytable import PrettyTable
 
-from data import daftar_menu, KATEGORI
+from data import daftar_menu
 from input_utils import (
     rupiah,
     input_teks,
     input_angka,
-    pilih_opsi,
     pilih_kategori
 )
-
 from sorting_search import bubble_sort, cari_kode
 
 
-# ==========================================
-# MENAMPILKAN MENU
-# ==========================================
-
-def tampilkan_menu(data):
-    if not data:
-        print("Tidak ada menu yang dapat ditampilkan.")
-        return
-
-    urutan_menu = sorted(
-        data,
-        key=lambda x: KATEGORI.index(x["kategori"])
-    )
+def tampilkan_menu(data=None):
+    if data is None:
+        data = daftar_menu
 
     tabel = PrettyTable()
 
-    tabel.title = "DAFTAR MENU"
-    tabel.field_names = ["Kode", "Nama Menu", "Kategori", "Harga"]
+    tabel.field_names = [
+        "Kode",
+        "Nama",
+        "Kategori",
+        "Harga",
+        "Stok"
+    ]
 
-    tabel.align = "l"
-    tabel.align["Harga"] = "r"
-    tabel.max_width["Nama Menu"] = 28
-
-    for menu in urutan_menu:
+    for menu in data:
         tabel.add_row([
             menu["kode"],
             menu["nama"],
             menu["kategori"],
-            rupiah(menu["harga"])
+            rupiah(menu["harga"]),
+            menu["stok"]
         ])
 
     print(tabel)
 
 
-# ==========================================
-# CREATE
-# ==========================================
-
 def tambah_menu():
-    while True:
-        kode = input_teks(
-            "Kode menu (contoh M05): "
-        ).upper()
+    print("\n=== TAMBAH MENU ===")
 
-        if not kode.isascii() or not kode.isalnum():
-            print(
-                "Kode hanya boleh berisi huruf A-Z "
-                "dan angka 0-9."
-            )
+    kode = input_teks("Masukkan kode menu: ").upper()
 
-        elif cari_kode(kode) is not None:
-            print("Kode sudah digunakan.")
+    if cari_kode(kode) is not None:
+        print("Kode menu sudah digunakan!")
+        return
 
-        else:
-            break
-
-    nama = input_teks("Nama menu: ").title()
+    nama = input_teks("Masukkan nama menu: ")
     kategori = pilih_kategori()
-    harga = input_angka("Harga (Rp): ", 1)
+    harga = input_angka("Masukkan harga: ", minimal=1)
+    stok = input_angka("Masukkan stok: ", minimal=0)
 
-    daftar_menu.append({
+    menu_baru = {
         "kode": kode,
         "nama": nama,
         "kategori": kategori,
-        "harga": harga
-    })
+        "harga": harga,
+        "stok": stok
+    }
 
-    print("Menu berhasil ditambahkan.")
+    daftar_menu.append(menu_baru)
 
+    print("Menu berhasil ditambahkan!")
 
-# ==========================================
-# UPDATE
-# ==========================================
 
 def ubah_menu():
-    tampilkan_menu(daftar_menu)
+    print("\n=== UBAH MENU ===")
 
-    if not daftar_menu:
-        return
-
-    menu = cari_kode(
-        input_teks("Kode menu yang diubah: ")
-    )
+    kode = input_teks("Masukkan kode menu: ").upper()
+    menu = cari_kode(kode)
 
     if menu is None:
-        print("Kode tidak ditemukan.")
+        print("Menu tidak ditemukan!")
         return
 
-    nama = input_teks("Nama baru: ").title()
-    kategori = pilih_kategori()
-    harga = input_angka("Harga baru (Rp): ", 1)
+    print("\nData menu saat ini:")
+    tampilkan_menu([menu])
 
-    menu.update({
-        "nama": nama,
-        "kategori": kategori,
-        "harga": harga
-    })
-
-    print("Menu berhasil diubah. Kode menu tetap.")
-
-
-# ==========================================
-# DELETE
-# ==========================================
-
-def hapus_menu():
-    tampilkan_menu(daftar_menu)
-
-    if not daftar_menu:
-        return
-
-    menu = cari_kode(
-        input_teks("Kode menu yang dihapus: ")
+    pilihan = input_teks(
+        "Ubah (1) Nama, (2) Kategori, "
+        "(3) Harga, (4) Stok, (5) Semua: "
     )
 
-    if menu is None:
-        print("Kode tidak ditemukan.")
-        return
+    if pilihan == "1":
+        menu["nama"] = input_teks("Nama baru: ")
 
-    print(f"Hapus {menu['nama']}?")
+    elif pilihan == "2":
+        menu["kategori"] = pilih_kategori()
 
-    konfirmasi = pilih_opsi(
-        "Konfirmasi hapus",
-        [
-            ("Batal", 0),
-            ("Ya, hapus", 1)
-        ]
-    )
-
-    if konfirmasi == 1:
-        daftar_menu.remove(menu)
-        print("Menu berhasil dihapus.")
-
-    else:
-        print("Penghapusan dibatalkan.")
-
-
-# ==========================================
-# PENCARIAN MENU
-# ==========================================
-
-def cari_menu():
-    pilihan = pilih_opsi(
-        "Pilih pencarian",
-        [
-            ("Kode (Binary Search)", 1),
-            ("Sebagian nama", 2)
-        ]
-    )
-
-    if pilihan == 1:
-        menu = cari_kode(
-            input_teks("Kode menu: ")
+    elif pilihan == "3":
+        menu["harga"] = input_angka(
+            "Harga baru: ", minimal=1
         )
 
-        hasil = [menu] if menu is not None else []
+    elif pilihan == "4":
+        menu["stok"] = input_angka(
+            "Stok baru: ", minimal=0
+        )
+
+    elif pilihan == "5":
+        menu["nama"] = input_teks("Nama baru: ")
+        menu["kategori"] = pilih_kategori()
+        menu["harga"] = input_angka(
+            "Harga baru: ", minimal=1
+        )
+        menu["stok"] = input_angka(
+            "Stok baru: ", minimal=0
+        )
 
     else:
-        kata = input_teks(
-            "Nama menu: "
+        print("Pilihan tidak valid!")
+        return
+
+    print("Menu berhasil diperbarui!")
+
+
+def hapus_menu():
+    print("\n=== HAPUS MENU ===")
+
+    kode = input_teks("Masukkan kode menu: ").upper()
+    menu = cari_kode(kode)
+
+    if menu is None:
+        print("Menu tidak ditemukan!")
+        return
+
+    tampilkan_menu([menu])
+
+    konfirmasi = input_teks(
+        "Yakin ingin menghapus menu? (y/n): "
+    ).lower()
+
+    if konfirmasi == "y":
+        daftar_menu.remove(menu)
+        print("Menu berhasil dihapus!")
+
+    else:
+        print("Penghapusan dibatalkan!")
+
+
+def cari_menu():
+    print("\n=== CARI MENU ===")
+
+    pilihan = input_teks(
+        "1. Cari berdasarkan kode\n"
+        "2. Cari berdasarkan nama\n"
+        "Pilihan: "
+    )
+
+    if pilihan == "1":
+        kode = input_teks(
+            "Masukkan kode menu: "
+        ).upper()
+
+        hasil = cari_kode(kode)
+
+        if hasil:
+            tampilkan_menu([hasil])
+        else:
+            print("Menu tidak ditemukan!")
+
+    elif pilihan == "2":
+        nama = input_teks(
+            "Masukkan nama menu: "
         ).lower()
 
-        hasil = []
+        hasil = [
+            menu for menu in daftar_menu
+            if nama in menu["nama"].lower()
+        ]
 
-        for menu in daftar_menu:
-            if kata in menu["nama"].lower():
-                hasil.append(menu)
+        if hasil:
+            tampilkan_menu(hasil)
+        else:
+            print("Menu tidak ditemukan!")
 
-    tampilkan_menu(hasil)
+    else:
+        print("Pilihan tidak valid!")
 
-
-# ==========================================
-# SORTING MENU
-# ==========================================
 
 def urutkan_menu():
-    pilihan = pilih_opsi(
-        "Urutkan berdasarkan",
-        [
-            ("Nama", 1),
-            ("Harga", 2)
-        ]
+    print("\n=== URUTKAN MENU ===")
+
+    pilihan = input_teks(
+        "1. Berdasarkan nama\n"
+        "2. Berdasarkan harga\n"
+        "3. Berdasarkan stok\n"
+        "Pilihan: "
     )
 
-    atribut = "nama" if pilihan == 1 else "harga"
+    if pilihan == "1":
+        atribut = "nama"
 
-    menurun = pilih_opsi(
-        "Pilih urutan",
-        [
-            ("Menaik (A-Z / termurah)", False),
-            ("Menurun (Z-A / termahal)", True)
-        ]
+    elif pilihan == "2":
+        atribut = "harga"
+
+    elif pilihan == "3":
+        atribut = "stok"
+
+    else:
+        print("Pilihan tidak valid!")
+        return
+
+    arah = input_teks(
+        "1. Ascending\n"
+        "2. Descending\n"
+        "Pilihan: "
     )
+
+    if arah not in ("1", "2"):
+        print("Pilihan tidak valid!")
+        return
 
     hasil = bubble_sort(
         daftar_menu,
         atribut,
-        menurun
+        menurun=(arah == "2")
     )
 
     tampilkan_menu(hasil)

@@ -1,7 +1,3 @@
-# ==========================================
-# PESANAN DAN PEMBAYARAN
-# ==========================================
-
 from prettytable import PrettyTable
 
 from data import (
@@ -14,193 +10,215 @@ from data import (
 from input_utils import (
     rupiah,
     input_teks,
-    input_angka,
-    pilih_opsi
+    input_angka
 )
 
 from sorting_search import cari_kode
 from menu import tampilkan_menu
 
 
-# ==========================================
-# PERHITUNGAN TOTAL DAN DISKON
-# ==========================================
-
 def hitung_total(pesanan):
-    subtotal = 0
-
-    for item in pesanan:
-        subtotal += item["harga"] * item["jumlah"]
-
-    diskon = (
-        round(subtotal * PERSEN_DISKON)
-        if subtotal >= BATAS_DISKON
-        else 0
+    subtotal = sum(
+        item["menu"]["harga"] * item["jumlah"]
+        for item in pesanan
     )
 
-    return subtotal, diskon, subtotal - diskon
+    if subtotal >= BATAS_DISKON:
+        diskon = subtotal * PERSEN_DISKON
+    else:
+        diskon = 0
 
+    total = subtotal - diskon
 
-# ==========================================
-# MENAMPILKAN PESANAN
-# ==========================================
+    return subtotal, diskon, total
+
 
 def tampilkan_pesanan(pesanan):
     tabel = PrettyTable()
 
     tabel.field_names = [
-        "Menu", "Jumlah", "Harga", "Total"
+        "Nama",
+        "Harga",
+        "Jumlah",
+        "Subtotal"
     ]
 
-    tabel.align["Menu"] = "l"
-    tabel.max_width["Menu"] = 28
-
     for item in pesanan:
-        total_item = item["harga"] * item["jumlah"]
+        menu = item["menu"]
+        jumlah = item["jumlah"]
+
+        subtotal_item = menu["harga"] * jumlah
 
         tabel.add_row([
-            item["nama"],
-            item["jumlah"],
-            rupiah(item["harga"]),
-            rupiah(total_item)
+            menu["nama"],
+            rupiah(menu["harga"]),
+            jumlah,
+            rupiah(subtotal_item)
         ])
 
     print(tabel)
 
-    subtotal, diskon, total = hitung_total(pesanan)
-
-    ringkasan = PrettyTable(
-        ["Informasi", "Nominal"]
-    )
-
-    ringkasan.align = "l"
-
-    ringkasan.add_rows([
-        ["Subtotal", rupiah(subtotal)],
-        ["Diskon", rupiah(diskon)],
-        ["Total bayar", rupiah(total)]
-    ])
-
-    print(ringkasan)
-
-
-# ==========================================
-# MEMBUAT PESANAN
-# ==========================================
 
 def buat_pesanan():
-    if not daftar_menu:
-        print("Tambahkan menu terlebih dahulu.")
-        return
+    print("\n=== PEMESANAN MAKANAN ===")
 
-    pelanggan = input_teks(
+    nama_pelanggan = input_teks(
         "Nama pelanggan: "
-    ).title()
+    )
 
     pesanan = []
 
     while True:
-        tampilkan_menu(daftar_menu)
+        print("\nDaftar menu tersedia:")
 
-        pilihan = pilih_opsi(
-            "Pesanan",
-            [
-                ("Tambah item", 1),
-                ("Bayar", 2),
-                ("Batalkan pesanan", 0)
-            ]
+        menu_tersedia = [
+            menu for menu in daftar_menu
+            if menu["stok"] > 0
+        ]
+
+        if not menu_tersedia:
+            print("Tidak ada menu yang tersedia!")
+            return
+
+        tampilkan_menu(menu_tersedia)
+
+        kode = input_teks(
+            "Masukkan kode menu "
+            "(0 untuk selesai): "
+        ).upper()
+
+        if kode == "0":
+            break
+
+        menu = cari_kode(kode)
+
+        if menu is None:
+            print("Menu tidak ditemukan!")
+            continue
+
+        if menu["stok"] <= 0:
+            print("Menu sudah habis!")
+            continue
+
+        jumlah = input_angka(
+            "Masukkan jumlah: ",
+            minimal=1
         )
 
-        if pilihan == 0:
-            print(
-                "Pesanan dibatalkan. "
-                "Tidak dicatat sebagai penjualan."
-            )
+        jumlah_sebelumnya = sum(
+            item["jumlah"]
+            for item in pesanan
+            if item["menu"]["kode"] == kode
+        )
 
-            return
+        if jumlah + jumlah_sebelumnya > menu["stok"]:
+            print("Stok tidak mencukupi!")
+            print("Stok tersedia:", menu["stok"])
+            continue
 
-        elif pilihan == 1:
-            menu = cari_kode(
-                input_teks("Kode menu: ")
-            )
+        item_ada = False
 
-            if menu is None:
-                print("Kode tidak ditemukan.")
-                continue
+        for item in pesanan:
+            if item["menu"]["kode"] == kode:
+                item["jumlah"] += jumlah
+                item_ada = True
+                break
 
-            jumlah = input_angka(
-                "Jumlah pesanan: ", 1
-            )
+        if not item_ada:
+            pesanan.append({
+                "menu": menu,
+                "jumlah": jumlah
+            })
 
-            ditemukan = False
+        print("Menu berhasil ditambahkan ke pesanan!")
 
-            for item in pesanan:
-                if item["kode"] == menu["kode"]:
-                    item["jumlah"] += jumlah
-                    ditemukan = True
-                    break
+    if not pesanan:
+        print("Pesanan kosong!")
+        return
 
-            if not ditemukan:
-                item = menu.copy()
-                item["jumlah"] = jumlah
-                pesanan.append(item)
+    print("\n=== RINGKASAN PESANAN ===")
 
-            tampilkan_pesanan(pesanan)
+    tampilkan_pesanan(pesanan)
 
-        else:
-            if not pesanan:
-                print("Pesanan masih kosong.")
-                continue
+    subtotal, diskon, total = hitung_total(pesanan)
 
-            tampilkan_pesanan(pesanan)
+    print("Subtotal :", rupiah(subtotal))
+    print("Diskon   :", rupiah(diskon))
+    print("Total     :", rupiah(total))
 
-            subtotal, diskon, total = hitung_total(
-                pesanan
-            )
+    konfirmasi = input_teks(
+        "Lanjutkan pembayaran? (y/n): "
+    ).lower()
 
-            while True:
-                bayar = input_angka(
-                    "Uang pembayaran (0 untuk batal): ",
-                    0
-                )
+    if konfirmasi != "y":
+        print("Pesanan dibatalkan!")
+        return
 
-                if bayar == 0:
-                    print("Pesanan dibatalkan.")
-                    return
+    bayar = input_angka(
+        "Masukkan uang pembayaran: ",
+        minimal=0
+    )
 
-                if bayar >= total:
-                    break
+    if bayar < total:
+        print("Uang pembayaran tidak mencukupi!")
+        print("Transaksi dibatalkan!")
+        return
 
-                print("Uang pembayaran belum cukup.")
+    kembalian = bayar - total
 
-            transaksi = {
-                "nomor": len(riwayat_transaksi) + 1,
-                "pelanggan": pelanggan,
-                "pesanan": pesanan,
-                "subtotal": subtotal,
-                "diskon": diskon,
-                "total": total,
-                "bayar": bayar,
-                "kembalian": bayar - total
+    # Pengurangan stok dilakukan setelah pembayaran berhasil
+    for item in pesanan:
+        item["menu"]["stok"] -= item["jumlah"]
+
+    transaksi = {
+        "pelanggan": nama_pelanggan,
+        "items": [
+            {
+                "kode": item["menu"]["kode"],
+                "nama": item["menu"]["nama"],
+                "harga": item["menu"]["harga"],
+                "jumlah": item["jumlah"]
             }
+            for item in pesanan
+        ],
+        "subtotal": subtotal,
+        "diskon": diskon,
+        "total": total,
+        "bayar": bayar,
+        "kembalian": kembalian
+    }
 
-            riwayat_transaksi.append(transaksi)
+    riwayat_transaksi.append(transaksi)
 
-            print(
-                f"\nSTRUK #{transaksi['nomor']} "
-                f"| {pelanggan}"
-            )
+    print("\n=== STRUK PEMBAYARAN ===")
 
-            tampilkan_pesanan(pesanan)
+    tabel = PrettyTable()
 
-            print(f"Bayar    : {rupiah(bayar)}")
-            print(
-                f"Kembalian: "
-                f"{rupiah(transaksi['kembalian'])}"
-            )
+    tabel.field_names = [
+        "Nama",
+        "Harga",
+        "Jumlah",
+        "Subtotal"
+    ]
 
-            print(
-                "Transaksi berhasil. Terima kasih!"
-            )
+    for item in pesanan:
+        menu = item["menu"]
 
-            return
+        tabel.add_row([
+            menu["nama"],
+            rupiah(menu["harga"]),
+            item["jumlah"],
+            rupiah(menu["harga"] * item["jumlah"])
+        ])
+
+    print(tabel)
+
+    print("Pelanggan :", nama_pelanggan)
+    print("Subtotal  :", rupiah(subtotal))
+    print("Diskon    :", rupiah(diskon))
+    print("Total     :", rupiah(total))
+    print("Bayar     :", rupiah(bayar))
+    print("Kembalian :", rupiah(kembalian))
+
+    print("\nTransaksi berhasil!")
+    print("Stok menu telah diperbarui.")

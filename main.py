@@ -1,7 +1,3 @@
-# ==========================================
-# MENU UTAMA PROGRAM
-# ==========================================
-
 import os
 import sys
 
@@ -34,19 +30,11 @@ from pesanan import buat_pesanan
 from laporan import laporan_penjualan
 
 
-# ==========================================
-# CLEAR TERMINAL
-# ==========================================
-
 def clear_terminal():
     os.system(
         "cls" if os.name == "nt" else "clear"
     )
 
-
-# ==========================================
-# MENU UTAMA
-# ==========================================
 
 def main():
     berjalan = True
@@ -128,10 +116,6 @@ def main():
                 "ke menu utama..."
             )
 
-
-# ==========================================
-# MENJALANKAN PROGRAM
-# ==========================================
 
 if __name__ == "__main__":
 

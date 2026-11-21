@@ -1,87 +1,80 @@
-# ==========================================
-# LAPORAN PENJUALAN
-# ==========================================
-
 from prettytable import PrettyTable
 
-from data import (
-    riwayat_transaksi,
-    KATEGORI
-)
-
+from data import riwayat_transaksi, KATEGORI
 from input_utils import rupiah
-from pesanan import tampilkan_pesanan
 
 
 def laporan_penjualan():
+    print("\n=== LAPORAN PENJUALAN ===")
+
     if not riwayat_transaksi:
-        print("Belum ada transaksi berhasil.")
+        print("Belum ada transaksi!")
         return
 
-    omzet_kotor = 0
+    total_transaksi = len(riwayat_transaksi)
+    total_barang = 0
+    omzet = 0
     total_diskon = 0
     pendapatan = 0
-    jumlah_item = 0
 
     kategori_terjual = set()
 
-    print("\nLAPORAN PENJUALAN")
+    tabel = PrettyTable()
+
+    tabel.field_names = [
+        "Pelanggan",
+        "Barang",
+        "Subtotal",
+        "Diskon",
+        "Total"
+    ]
 
     for transaksi in riwayat_transaksi:
-        print(
-            f"\n#{transaksi['nomor']} "
-            f"| {transaksi['pelanggan']}"
+
+        jumlah_barang_transaksi = sum(
+            item["jumlah"]
+            for item in transaksi["items"]
         )
 
-        tampilkan_pesanan(
-            transaksi["pesanan"]
-        )
-
-        omzet_kotor += transaksi["subtotal"]
+        total_barang += jumlah_barang_transaksi
+        omzet += transaksi["subtotal"]
         total_diskon += transaksi["diskon"]
         pendapatan += transaksi["total"]
 
-        for item in transaksi["pesanan"]:
-            jumlah_item += item["jumlah"]
+        for item in transaksi["items"]:
 
-            kategori_terjual.add(
-                item["kategori"]
-            )
+            for kategori in KATEGORI:
+                if kategori == "Makanan":
+                    nama_makanan = [
+                        menu["nama"]
+                        for menu in []
+                    ]
 
-    ringkasan = PrettyTable(
-        ["Informasi", "Hasil"]
+                # Mengambil kategori dari katalog saat ini
+                from data import daftar_menu
+
+                for menu in daftar_menu:
+                    if menu["nama"] == item["nama"]:
+                        kategori_terjual.add(menu["kategori"])
+
+        tabel.add_row([
+            transaksi["pelanggan"],
+            jumlah_barang_transaksi,
+            rupiah(transaksi["subtotal"]),
+            rupiah(transaksi["diskon"]),
+            rupiah(transaksi["total"])
+        ])
+
+    print(tabel)
+
+    print("\n=== RINGKASAN ===")
+    print("Jumlah transaksi :", total_transaksi)
+    print("Jumlah barang   :", total_barang)
+    print("Omzet           :", rupiah(omzet))
+    print("Total diskon    :", rupiah(total_diskon))
+    print("Pendapatan      :", rupiah(pendapatan))
+
+    print(
+        "Kategori terjual:",
+        kategori_terjual
     )
-
-    ringkasan.align = "l"
-
-    ringkasan.add_rows([
-        [
-            "Jumlah transaksi",
-            len(riwayat_transaksi)
-        ],
-        [
-            "Jumlah item",
-            jumlah_item
-        ],
-        [
-            "Omzet kotor",
-            rupiah(omzet_kotor)
-        ],
-        [
-            "Total diskon",
-            rupiah(total_diskon)
-        ],
-        [
-            "Pendapatan",
-            rupiah(pendapatan)
-        ],
-        [
-            "Kategori terjual",
-            ", ".join(
-                k for k in KATEGORI
-                if k in kategori_terjual
-            )
-        ]
-    ])
-
-    print(ringkasan)

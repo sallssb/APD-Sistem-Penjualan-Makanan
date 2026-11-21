@@ -1,13 +1,9 @@
-# ==========================================
-# INPUT DAN FORMAT
-# ==========================================
-
 import inquirer
 from data import KATEGORI
 
 
-def rupiah(nilai):
-    return "Rp" + format(nilai, ",").replace(",", ".")
+def rupiah(nominal):
+    return f"Rp{nominal:,.0f}".replace(",", ".")
 
 
 def input_teks(pesan):
@@ -16,43 +12,43 @@ def input_teks(pesan):
 
         if teks:
             return teks
+        else:
+            print("Input tidak boleh kosong!")
 
-        print("Input tidak boleh kosong.")
 
-
-def input_angka(pesan, minimum=0, maksimum=None):
+def input_angka(pesan, minimal=0):
     while True:
         try:
             angka = int(input(pesan))
 
-            if angka < minimum or (
-                maksimum is not None and angka > maksimum
-            ):
-                print("Angka di luar batas yang diizinkan.")
-            else:
+            if angka >= minimal:
                 return angka
+            else:
+                print(f"Angka minimal adalah {minimal}!")
 
         except ValueError:
-            print("Masukkan bilangan bulat, tanpa titik atau koma.")
+            print("Masukkan angka yang valid!")
 
 
 def pilih_opsi(pesan, pilihan):
-    jawaban = inquirer.prompt([
+    pertanyaan = [
         inquirer.List(
             "pilihan",
             message=pesan,
             choices=pilihan
         )
-    ])
+    ]
+
+    jawaban = inquirer.prompt(pertanyaan)
 
     if jawaban is None:
-        raise KeyboardInterrupt
+        return None
 
     return jawaban["pilihan"]
 
 
 def pilih_kategori():
     return pilih_opsi(
-        "Pilih kategori",
+        "Pilih kategori:",
         list(KATEGORI)
     )
