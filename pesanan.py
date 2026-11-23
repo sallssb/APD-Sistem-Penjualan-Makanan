@@ -10,7 +10,8 @@ from data import (
 from input_utils import (
     rupiah,
     input_teks,
-    input_angka
+    input_angka,
+    pilih_opsi
 )
 
 from sorting_search import cari_kode
@@ -69,7 +70,6 @@ def buat_pesanan():
     pesanan = []
 
     while True:
-        print("\nDaftar menu tersedia:")
 
         menu_tersedia = [
             menu for menu in daftar_menu
@@ -80,24 +80,34 @@ def buat_pesanan():
             print("Tidak ada menu yang tersedia!")
             return
 
+        print("\nDaftar menu tersedia:")
         tampilkan_menu(menu_tersedia)
 
-        kode = input_teks(
-            "Masukkan kode menu "
-            "(0 untuk selesai): "
-        ).upper()
+        pilihan_menu = [
+            (
+                f'{menu["kode"]} | {menu["nama"]} | '
+                f'{rupiah(menu["harga"])} | '
+                f'Stok: {menu["stok"]}'
+            )
+            for menu in menu_tersedia
+        ]
 
-        if kode == "0":
+        pilihan_menu.append("Selesai memilih menu")
+
+        pilihan = pilih_opsi(
+            "Pilih menu yang ingin dipesan:",
+            pilihan_menu
+        )
+
+        if pilihan is None or pilihan == "Selesai memilih menu":
             break
+
+        kode = pilihan.split(" | ")[0]
 
         menu = cari_kode(kode)
 
         if menu is None:
             print("Menu tidak ditemukan!")
-            continue
-
-        if menu["stok"] <= 0:
-            print("Menu sudah habis!")
             continue
 
         jumlah = input_angka(
@@ -130,7 +140,7 @@ def buat_pesanan():
                 "jumlah": jumlah
             })
 
-        print("Menu berhasil ditambahkan ke pesanan!")
+        print("Menu berhasil ditambahkan!")
 
     if not pesanan:
         print("Pesanan kosong!")
@@ -144,13 +154,14 @@ def buat_pesanan():
 
     print("Subtotal :", rupiah(subtotal))
     print("Diskon   :", rupiah(diskon))
-    print("Total     :", rupiah(total))
+    print("Total    :", rupiah(total))
 
-    konfirmasi = input_teks(
-        "Lanjutkan pembayaran? (y/n): "
-    ).lower()
+    konfirmasi = pilih_opsi(
+        "Lanjutkan pembayaran?",
+        ["Ya", "Tidak"]
+    )
 
-    if konfirmasi != "y":
+    if konfirmasi != "Ya":
         print("Pesanan dibatalkan!")
         return
 
@@ -166,7 +177,7 @@ def buat_pesanan():
 
     kembalian = bayar - total
 
-    # Pengurangan stok dilakukan setelah pembayaran berhasil
+    # Stok berkurang setelah pembayaran berhasil
     for item in pesanan:
         item["menu"]["stok"] -= item["jumlah"]
 
@@ -176,6 +187,7 @@ def buat_pesanan():
             {
                 "kode": item["menu"]["kode"],
                 "nama": item["menu"]["nama"],
+                "kategori": item["menu"]["kategori"],
                 "harga": item["menu"]["harga"],
                 "jumlah": item["jumlah"]
             }
@@ -221,4 +233,4 @@ def buat_pesanan():
     print("Kembalian :", rupiah(kembalian))
 
     print("\nTransaksi berhasil!")
-    print("Stok menu telah diperbarui.")
+    print("Stok menu telah diperbarui!")

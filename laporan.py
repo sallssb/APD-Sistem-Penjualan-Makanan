@@ -1,6 +1,6 @@
 from prettytable import PrettyTable
 
-from data import riwayat_transaksi, KATEGORI
+from data import riwayat_transaksi
 from input_utils import rupiah
 
 
@@ -31,35 +31,22 @@ def laporan_penjualan():
 
     for transaksi in riwayat_transaksi:
 
-        jumlah_barang_transaksi = sum(
+        jumlah_barang = sum(
             item["jumlah"]
             for item in transaksi["items"]
         )
 
-        total_barang += jumlah_barang_transaksi
+        total_barang += jumlah_barang
         omzet += transaksi["subtotal"]
         total_diskon += transaksi["diskon"]
         pendapatan += transaksi["total"]
 
         for item in transaksi["items"]:
-
-            for kategori in KATEGORI:
-                if kategori == "Makanan":
-                    nama_makanan = [
-                        menu["nama"]
-                        for menu in []
-                    ]
-
-                # Mengambil kategori dari katalog saat ini
-                from data import daftar_menu
-
-                for menu in daftar_menu:
-                    if menu["nama"] == item["nama"]:
-                        kategori_terjual.add(menu["kategori"])
+            kategori_terjual.add(item["kategori"])
 
         tabel.add_row([
             transaksi["pelanggan"],
-            jumlah_barang_transaksi,
+            jumlah_barang,
             rupiah(transaksi["subtotal"]),
             rupiah(transaksi["diskon"]),
             rupiah(transaksi["total"])
@@ -73,8 +60,4 @@ def laporan_penjualan():
     print("Omzet           :", rupiah(omzet))
     print("Total diskon    :", rupiah(total_diskon))
     print("Pendapatan      :", rupiah(pendapatan))
-
-    print(
-        "Kategori terjual:",
-        kategori_terjual
-    )
+    print("Kategori terjual:", kategori_terjual)

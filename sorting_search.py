@@ -5,12 +5,20 @@ def bubble_sort(data, atribut, menurun=False):
         for j in range(len(data) - 1 - i):
 
             if menurun:
-                kondisi = data[j][atribut] < data[j + 1][atribut]
+                kondisi = (
+                    data[j][atribut]
+                    < data[j + 1][atribut]
+                )
             else:
-                kondisi = data[j][atribut] > data[j + 1][atribut]
+                kondisi = (
+                    data[j][atribut]
+                    > data[j + 1][atribut]
+                )
 
             if kondisi:
-                data[j], data[j + 1] = data[j + 1], data[j]
+                data[j], data[j + 1] = (
+                    data[j + 1], data[j]
+                )
 
     return data
 
@@ -27,6 +35,7 @@ def cari_kode(kode):
     kanan = len(data_urut) - 1
 
     while kiri <= kanan:
+
         tengah = (kiri + kanan) // 2
 
         if data_urut[tengah]["kode"] == kode:
