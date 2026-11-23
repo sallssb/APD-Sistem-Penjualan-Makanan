@@ -1,72 +1,57 @@
-import os
-
-from input_utils import pilih_opsi
-
-from menu import (
-    tampilkan_menu,
-    tambah_menu,
-    ubah_menu,
-    hapus_menu,
-    cari_menu,
-    urutkan_menu
+from utils import bersihkanLayar, tampilkanHeader, pilih, konfirmasi
+from menuMakanan import (
+    buatDataAwal, tambahMenu, tampilkanMenu, ubahMenu,
+    hapusMenu, cariMenu, urutkanMenu,
 )
-
-from pesanan import buat_pesanan
-from laporan import laporan_penjualan
-
-
-def clear_terminal():
-    os.system(
-        "cls" if os.name == "nt" else "clear"
-    )
+from transaksi import transaksiPenjualan
+from laporan import laporanPenjualan
 
 
-def menu_utama():
+def tampilkanMenuUtama():
+    bersihkanLayar()
+    tampilkanHeader("Menu Utama")
+    return pilih("Pilih Menu", [
+        ("1. Tambah Menu", 1),
+        ("2. Tampilkan Menu", 2),
+        ("3. Ubah Data Menu", 3),
+        ("4. Hapus Menu", 4),
+        ("5. Cari Menu", 5),
+        ("6. Urutkan Menu", 6),
+        ("7. Transaksi Penjualan", 7),
+        ("8. Laporan Penjualan", 8),
+        ("9. Keluar", 9),
+    ])
+
+
+def main():
+    menu = buatDataAwal()   
+    riwayat = []            
+
     while True:
+        pilihan = tampilkanMenuUtama()
 
-        pilihan = pilih_opsi(
-            "=== PROGRAM PENJUALAN MAKANAN ===",
-            [
-                "Tampilkan Menu",
-                "Tambah Menu",
-                "Ubah Menu",
-                "Hapus Menu",
-                "Cari Menu",
-                "Urutkan Menu",
-                "Buat Pesanan",
-                "Laporan Penjualan",
-                "Keluar"
-            ]
-        )
-
-        if pilihan is None or pilihan == "Keluar":
-            print("\nTerima kasih telah menggunakan program!")
-            break
-
-        elif pilihan == "Tampilkan Menu":
-            tampilkan_menu()
-
-        elif pilihan == "Tambah Menu":
-            tambah_menu()
-
-        elif pilihan == "Ubah Menu":
-            ubah_menu()
-
-        elif pilihan == "Hapus Menu":
-            hapus_menu()
-
-        elif pilihan == "Cari Menu":
-            cari_menu()
-
-        elif pilihan == "Urutkan Menu":
-            urutkan_menu()
-
-        elif pilihan == "Buat Pesanan":
-            buat_pesanan()
-
-        elif pilihan == "Laporan Penjualan":
-            laporan_penjualan()
+        if pilihan == 1:
+            tambahMenu(menu)
+        elif pilihan == 2:
+            tampilkanMenu(menu)
+        elif pilihan == 3:
+            ubahMenu(menu)
+        elif pilihan == 4:
+            hapusMenu(menu)
+        elif pilihan == 5:
+            cariMenu(menu)
+        elif pilihan == 6:
+            urutkanMenu(menu)
+        elif pilihan == 7:
+            transaksiPenjualan(menu, riwayat)
+        elif pilihan == 8:
+            laporanPenjualan(menu, riwayat)
+        elif pilihan == 9 or pilihan is None:
+            if konfirmasi("Yakin ingin keluar dari program?"):
+                bersihkanLayar()
+                print("Terima kasih telah menggunakan aplikasi ini!")
+                break
 
 
 if __name__ == "__main__":
-    menu_utama()
+    main()
